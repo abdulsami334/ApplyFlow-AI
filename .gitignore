@@ -1,0 +1,11 @@
+.vs/
+.playwright-mcp/
+**/bin/
+**/obj/
+**/node_modules/
+**/.next/
+**/out/
+*.user
+*.suo
+*.log
+appsettings.Development.json

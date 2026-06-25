@@ -1,0 +1,359 @@
+Below is documentation for the **current implementation only**. No new code.
+
+**Beginner View**
+This backend is a small ASP.NET Core Web API. It exposes authentication endpoints, stores users/applications in PostgreSQL through Entity Framework Core, hashes passwords with BCrypt, and returns JWT tokens after registration/login.
+
+Current main flow:
+
+1. Client calls an API endpoint.
+2. ASP.NET Core routes the request to a controller.
+3. Controller calls `AuthService` for auth logic.
+4. `AuthService` reads/writes users using `AppDbContext`.
+5. EF Core talks to PostgreSQL.
+6. Response DTOs are returned to the client.
+7. Protected endpoints require a valid JWT in the `Authorization: Bearer <token>` header.
+
+**Project Structure**
+```text
+ApplyFlow-Backend/
+  Controllers/
+  Data/
+  DTOs/Auth/
+  Migrations/
+  Models/
+  Properties/
+  Services/
+  ApplyFlow-Backend.Tests/
+  Program.cs
+  appsettings.json
+  appsettings.Development.json
+  ApplyFlow-Backend.csproj
+  ApplyFlow-Backend.http
+  WeatherForecast.cs
+```
+
+**Folder Purposes**
+| Folder | Purpose |
+|---|---|
+| `Controllers` | API entry points. Receives HTTP requests and returns HTTP responses. |
+| `Data` | EF Core database context. Maps C# models to database tables. |
+| `DTOs/Auth` | Request/response shapes for authentication APIs. |
+| `Models` | Database entity classes: `User`, `Application`. |
+| `Services` | Business logic, currently authentication logic. |
+| `Migrations` | EF Core database schema history. |
+| `Properties` | Local launch/debug profiles. |
+| `ApplyFlow-Backend.Tests` | xUnit unit tests for current auth service behavior. |
+| `bin` / `obj` | Build output/cache. Generated, not application logic. |
+
+**File Catalogue**
+| File | Purpose | Responsibilities | Dependencies | Used By | Execution Flow |
+|---|---|---|---|---|---|
+| `Program.cs` | App startup | Registers controllers, Swagger, DbContext, DI, JWT auth, middleware | EF Core, JWT Bearer, Swagger, `AuthService`, `AppDbContext` | ASP.NET runtime | Runs first, builds services, validates JWT key, builds app, configures middleware, starts server |
+| `appsettings.json` | Main config | Stores logging, connection string, JWT settings | None | `Program.cs`, `AuthService` | Loaded automatically by configuration system |
+| `appsettings.Development.json` | Dev config override | Dev logging settings | None | Runtime in Development | Merged over `appsettings.json` in dev |
+| `ApplyFlow-Backend.csproj` | Main project file | Target framework, NuGet packages, excludes nested test files | NuGet packages | .NET SDK | Used during restore/build/run |
+| `ApplyFlow-Backend.csproj.user` | IDE user settings | Local Visual Studio settings | Visual Studio | IDE | Not part of runtime logic |
+| `ApplyFlow-Backend.http` | HTTP scratch file | Sample request to weather endpoint | REST client tooling | Developer | Manual testing only |
+| `WeatherForecast.cs` | Template model | Date/temp/summary for sample API | None | `WeatherForecastController` | Created in sample endpoint response |
+| `Controllers/AuthController.cs` | Auth API | Register and login endpoints | `IAuthService`, auth DTOs | HTTP clients | Receives request, calls service, returns `201`, `200`, `400`, or `401` |
+| `Controllers/UsersController.cs` | User API | Current user `/me` endpoint | `IAuthService`, JWT claims | HTTP clients | Requires JWT, reads user id claim, calls service |
+| `Controllers/ApplicationsController.cs` | Placeholder controller | Currently returns `View()` from `Index()` | MVC base `Controller` | Not useful for API yet | No real API flow currently |
+| `Controllers/WeatherForecastController.cs` | Template/sample API | Returns random weather data | `WeatherForecast` | HTTP clients | Demo endpoint only |
+| `Data/AppDbContext.cs` | EF Core context | Defines `Users`, `Applications`, schema constraints/indexes | EF Core, models | `AuthService`, migrations | Created per request scope, translates LINQ to SQL |
+| `Models/User.cs` | User entity | Represents `Users` table row | None | EF Core, `AuthService` | Stored/retrieved through `AppDbContext.Users` |
+| `Models/Application.cs` | Application entity | Represents `Applications` table row | None | EF Core | Schema exists, no CRUD API yet |
+| `DTOs/Auth/RegisterRequestDto.cs` | Register input | Email/password validation attributes | DataAnnotations | `AuthController`, `AuthService` | Bound from JSON request body |
+| `DTOs/Auth/LoginRequestDto.cs` | Login input | Email/password input validation | DataAnnotations | `AuthController`, `AuthService` | Bound from JSON request body |
+| `DTOs/Auth/AuthResponseDto.cs` | Auth output | Token, expiry, user response | `UserResponseDto` | `AuthService`, clients | Returned after register/login |
+| `DTOs/Auth/UserResponseDto.cs` | Safe user output | User id, email, created date only | None | `AuthService`, clients | Prevents password hash leakage |
+| `Services/IAuthService.cs` | Auth abstraction | Defines register/login/current-user methods | Auth DTOs | Controllers, tests | Enables DI and testable controller design |
+| `Services/AuthService.cs` | Auth business logic | Normalize email, hash/verify passwords, create users, generate JWT, map user DTOs | `AppDbContext`, `IConfiguration`, BCrypt, JWT libraries | `AuthController`, `UsersController`, tests | Main auth execution path |
+| `Migrations/20260624113728_InitialCreate.cs` | Initial schema | Creates `Users` and `Applications` tables | EF migrations | EF CLI/database update | Runs when applying initial migration |
+| `Migrations/20260624113728_InitialCreate.Designer.cs` | EF metadata | Auto-generated migration metadata | EF Core | EF tooling | Tooling support only |
+| `Migrations/20260624122817_AddUserAuthConstraints.cs` | Schema update | Adds max lengths, unique email index, application user index | EF migrations | EF CLI/database update | Runs after initial migration |
+| `Migrations/20260624122817_AddUserAuthConstraints.Designer.cs` | EF metadata | Auto-generated migration metadata | EF Core | EF tooling | Tooling support only |
+| `Migrations/AppDbContextModelSnapshot.cs` | Current EF model snapshot | Records latest model shape | EF Core | EF migrations | EF compares this when creating next migration |
+| `Properties/launchSettings.json` | Local launch profile | HTTP/HTTPS ports and environment | .NET tooling | `dotnet run`, Visual Studio | Used when launching locally |
+| `ApplyFlow-Backend.Tests/ApplyFlow-Backend.Tests.csproj` | Test project | xUnit packages, EF InMemory, reference to API project | xUnit, EF InMemory | `dotnet test` | Builds/runs tests |
+| `ApplyFlow-Backend.Tests/AuthServiceTests.cs` | Unit tests | Tests register/login/current-user auth behavior | `AuthService`, EF InMemory, BCrypt | Test runner | Creates in-memory DbContext and verifies auth logic |
+
+**Request Lifecycle**
+Beginner version: request comes in, controller receives it, service does the real work, database saves/reads data, response goes back.
+
+Technical version:
+
+1. Kestrel receives HTTP request.
+2. Middleware pipeline runs: HTTPS redirection, authentication, authorization.
+3. Endpoint routing maps request to controller action.
+4. Model binding creates DTO object from JSON body.
+5. `[ApiController]` performs automatic validation for DataAnnotations.
+6. Controller calls `IAuthService`.
+7. `AuthService` uses scoped `AppDbContext`.
+8. EF Core translates LINQ to SQL for PostgreSQL.
+9. Service returns DTO.
+10. Controller returns HTTP result.
+
+**Authentication Flow**
+Register:
+
+1. `POST /api/auth/register`
+2. Body maps to `RegisterRequestDto`.
+3. `AuthController.Register()` calls `AuthService.RegisterAsync()`.
+4. Email is trimmed/lowercased.
+5. Service checks if email already exists.
+6. Password is hashed with BCrypt.
+7. User is saved.
+8. JWT is generated.
+9. Response returns token + user data.
+
+Login:
+
+1. `POST /api/auth/login`
+2. Body maps to `LoginRequestDto`.
+3. Service finds user by normalized email.
+4. BCrypt verifies password against stored hash.
+5. If valid, JWT is generated.
+6. If invalid, `401 Unauthorized`.
+
+**JWT Flow**
+Beginner version: JWT is a signed login pass. Client stores it and sends it with protected requests.
+
+Technical version:
+
+- Generated in `AuthService.GenerateJwtToken()`.
+- Claims included:
+  - `sub`: user id
+  - `email`: user email
+  - `ClaimTypes.NameIdentifier`: user id
+  - `ClaimTypes.Email`: user email
+- Signed with HMAC SHA256 using `Jwt:Key`.
+- Validated by JWT Bearer middleware using:
+  - issuer validation
+  - audience validation
+  - lifetime validation
+  - signing key validation
+- Protected endpoints use `[Authorize]`.
+
+**Password Hashing Flow**
+- Plain password is never saved.
+- `BCrypt.Net.BCrypt.HashPassword(request.Password)` creates a salted hash.
+- Stored value goes into `Users.PasswordHash`.
+- Login uses `BCrypt.Net.BCrypt.Verify(inputPassword, storedHash)`.
+- BCrypt automatically handles salt and work factor internally.
+
+**Entity Framework Flow**
+- `AppDbContext` is registered with `AddDbContext`.
+- Lifetime is scoped: one context per request scope.
+- `DbSet<User>` maps to `Users`.
+- `DbSet<Application>` maps to `Applications`.
+- LINQ queries like `AnyAsync`, `FirstOrDefaultAsync`, `SingleAsync` become SQL.
+- `SaveChangesAsync()` commits inserts/updates.
+
+**Database Schema**
+`Users` table:
+
+| Column | Type | Notes |
+|---|---|---|
+| `Id` | `uuid` | Primary key |
+| `Email` | `varchar(255)` | Required, unique |
+| `PasswordHash` | `varchar(255)` | Required, BCrypt hash |
+| `CreatedAt` | timestamp with time zone | Required |
+
+`Applications` table:
+
+| Column | Type | Notes |
+|---|---|---|
+| `Id` | `uuid` | Primary key |
+| `UserId` | `uuid` | Indexed, but no foreign key currently |
+| `CompanyName` | `varchar(255)` | Required |
+| `PositionTitle` | `varchar(255)` | Required |
+| `Status` | `varchar(50)` | Required |
+| `AppliedDate` | timestamp with time zone | Required |
+
+Important: `Applications.UserId` has an index but no configured relationship/foreign key to `Users`.
+
+**API Endpoints**
+| Method | Route | Purpose | Auth Required |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Create account, return JWT | No |
+| `POST` | `/api/auth/login` | Login, return JWT | No |
+| `GET` | `/api/users/me` | Return current authenticated user | Yes |
+| `GET` | `/WeatherForecast` | Template sample endpoint | No |
+| `GET` | `/Applications/Index` depending on routing conventions | Placeholder MVC action | No real API behavior |
+
+**Security Mechanisms**
+Implemented:
+
+- BCrypt password hashing.
+- JWT Bearer authentication.
+- JWT issuer/audience/lifetime/signature validation.
+- `[Authorize]` on `/api/users/me`.
+- DTOs prevent returning password hashes.
+- Unique email database index.
+- Minimum JWT key length check.
+- Register DTO requires valid email and password length >= 8.
+
+Not yet implemented:
+
+- Refresh tokens.
+- Role-based authorization.
+- Rate limiting.
+- Account lockout.
+- Email verification.
+- HTTPS enforcement exists via middleware, but production HTTPS/proxy setup still needs deployment config.
+- JWT secret is stored in `appsettings.json`; production should use environment variables or secret manager.
+
+**Dependency Injection Setup**
+Registered in `Program.cs`:
+
+| Service | Lifetime | Implementation |
+|---|---|---|
+| Controllers | Framework-managed | `AddControllers()` |
+| `AppDbContext` | Scoped | PostgreSQL-backed EF context |
+| `IAuthService` | Scoped | `AuthService` |
+| JWT Authentication | Framework-managed | JWT Bearer handler |
+| Swagger | Framework-managed | Swashbuckle |
+
+Scoped means a new instance is created per request scope.
+
+**Middleware Pipeline**
+Current order:
+
+1. Development only: `UseSwagger()`
+2. Development only: `UseSwaggerUI()`
+3. `UseHttpsRedirection()`
+4. `UseAuthentication()`
+5. `UseAuthorization()`
+6. `MapControllers()`
+7. `Run()`
+
+Authentication must come before authorization, and it does.
+
+**Program.cs Execution Flow**
+1. Create builder.
+2. Register MVC controllers.
+3. Register Swagger/OpenAPI and Bearer security definition.
+4. Register PostgreSQL `AppDbContext`.
+5. Register `IAuthService`.
+6. Read and validate JWT key.
+7. Configure JWT Bearer token validation.
+8. Build app.
+9. Enable Swagger in development.
+10. Enable HTTPS redirection.
+11. Enable auth middleware.
+12. Map controllers.
+13. Start web server.
+
+**AppDbContext Responsibilities**
+Beginner: it is the bridge between C# objects and PostgreSQL tables.
+
+Technical:
+
+- Exposes `Users` and `Applications` DbSets.
+- Configures primary keys.
+- Configures required fields.
+- Configures max lengths.
+- Configures unique email index.
+- Configures `Applications.UserId` index.
+- Does not currently configure navigation properties or FK relationships.
+
+**Controller Responsibilities**
+`AuthController`:
+- Receives register/login requests.
+- Delegates logic to `IAuthService`.
+- Converts service exceptions into HTTP responses.
+
+`UsersController`:
+- Requires JWT for `/me`.
+- Reads authenticated user id from claims.
+- Calls `IAuthService.GetCurrentUserAsync()`.
+
+`WeatherForecastController`:
+- Template demo endpoint only.
+
+`ApplicationsController`:
+- Currently not a real API controller for job applications.
+- It inherits `Controller` and returns `View()`, which is more MVC than Web API.
+
+**Service Responsibilities**
+`AuthService` owns the auth business rules:
+
+- Normalize email.
+- Check duplicate email.
+- Hash password.
+- Verify password.
+- Save users.
+- Generate JWT.
+- Map `User` entity to safe response DTO.
+- Fetch current user without tracking.
+
+**DTO Responsibilities**
+DTOs protect the API boundary.
+
+- `RegisterRequestDto`: input for account creation.
+- `LoginRequestDto`: input for login.
+- `AuthResponseDto`: token + expiry + safe user data.
+- `UserResponseDto`: safe public user shape with no password hash.
+
+**How Data Travels**
+Register example:
+
+```text
+JSON body
+ -> RegisterRequestDto
+ -> AuthController.Register
+ -> AuthService.RegisterAsync
+ -> AppDbContext.Users.AnyAsync
+ -> BCrypt hash
+ -> AppDbContext.Users.Add
+ -> SaveChangesAsync
+ -> AuthResponseDto
+ -> HTTP 201 response
+```
+
+Login example:
+
+```text
+JSON body
+ -> LoginRequestDto
+ -> AuthController.Login
+ -> AuthService.LoginAsync
+ -> AppDbContext.Users.FirstOrDefaultAsync
+ -> BCrypt.Verify
+ -> JWT generation
+ -> AuthResponseDto
+ -> HTTP 200 response
+```
+
+Current user example:
+
+```text
+Authorization header
+ -> JWT middleware validates token
+ -> ClaimsPrincipal is created
+ -> UsersController.Me
+ -> ClaimTypes.NameIdentifier read
+ -> AuthService.GetCurrentUserAsync
+ -> AppDbContext.Users.AsNoTracking
+ -> UserResponseDto
+ -> HTTP 200 response
+```
+
+**Current Limitations And Technical Debt**
+- `ApplicationsController` is still a placeholder, not production API CRUD.
+- `Application` model has no EF relationship to `User`.
+- No foreign key from `Applications.UserId` to `Users.Id`.
+- No refresh token flow.
+- JWT secret is in `appsettings.json`, not secret storage.
+- No structured error handling middleware.
+- No logging inside controllers/services.
+- No request/response DTOs for applications yet.
+- No pagination/filtering/search for applications.
+- No integration tests for API endpoints.
+- No production CORS policy.
+- No email verification.
+- No password complexity beyond min length.
+- No account lockout/rate limiting.
+- No soft delete fields.
+- WeatherForecast template files still exist and should eventually be removed.
+- Test project is nested inside API folder, so main `.csproj` excludes it manually. It works, but a sibling test project folder would be cleaner long-term.
