@@ -9,3 +9,21 @@
 *.suo
 *.log
 appsettings.Development.json
+
+# Visual Studio
+.vs/
+
+# .NET
+**/bin/
+**/obj/
+**/artifacts/
+
+# Node
+**/node_modules/
+**/.next/
+
+# Playwright
+.playwright-mcp/
+
+# Logs
+*.log
