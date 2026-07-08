@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: ApplyFlowDB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: sami12
+    ports:
+      - "5432:5432"
+    volumes:
+      - applyflow-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ApplyFlowDB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ai-service:
+    build:
+      context: ./ai-service
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./ApplyFlow-Backend
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=ApplyFlowDB;Username=postgres;Password=sami12
+      AiService__BaseUrl: http://ai-service:8000
+      AiService__TimeoutSeconds: 30
+      Jwt__Key: applyflow-local-development-secret-key-12345
+      Jwt__Issuer: ApplyFlow
+      Jwt__Audience: ApplyFlowUsers
+      Jwt__ExpiresInMinutes: 60
+    ports:
+      - "5267:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+
+volumes:
+  applyflow-postgres:

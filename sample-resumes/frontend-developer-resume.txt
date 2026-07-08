@@ -1,0 +1,38 @@
+Sami Khan
+Frontend Developer
+
+Summary
+Frontend developer focused on accessible, responsive, and practical user interfaces. Experienced with React, Next.js, TypeScript, Tailwind CSS, form handling, API integration, and end-to-end testing.
+
+Skills
+React
+Next.js
+TypeScript
+JavaScript
+HTML
+CSS
+Tailwind CSS
+Responsive design
+Component architecture
+Axios
+Authentication UI
+Form validation
+Playwright
+ESLint
+Git
+
+Experience
+Frontend Developer
+Built dashboard, application list, application forms, resume library, and application detail pages.
+Created reusable UI components for buttons, cards, alerts, inputs, textareas, and selects.
+Implemented protected routes, navigation, loading states, empty states, and error states.
+Wrote Playwright tests for critical user workflows.
+
+Projects
+ApplyFlow AI
+Implemented Resume Library UI with upload, list, and delete actions.
+Built Application Resume Match Workspace with job description editor, resume selector, analyze button, and match result display.
+Connected frontend pages to authenticated backend APIs.
+
+Education
+Bachelor's degree in Computer Science

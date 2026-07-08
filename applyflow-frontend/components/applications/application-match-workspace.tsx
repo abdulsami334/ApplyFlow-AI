@@ -122,7 +122,7 @@ export function ApplicationMatchWorkspace({ applicationId }: ApplicationMatchWor
         <CardHeader>
           <CardTitle>Application Resume Match Workspace</CardTitle>
           <CardDescription>
-            Paste the job description, choose a resume from your library, then run a deterministic keyword match.
+            Paste the job description, choose a resume from your library, then run AI-assisted ATS analysis.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -208,8 +208,27 @@ function MatchResultCard({ analysis }: { analysis: ResumeMatchAnalysis }) {
           <p className="mt-2 text-4xl font-semibold text-slate-950">{analysis.matchScore}%</p>
         </div>
 
+        <div className="grid gap-3 md:grid-cols-3">
+          <Metric label="Similarity" value={formatOptionalPercent(analysis.similarityPercent)} />
+          <Metric label="Skill score" value={formatOptionalPercent(analysis.skillScore)} />
+          <Metric label="Domain score" value={formatOptionalPercent(analysis.domainScore)} />
+        </div>
+
+        {(analysis.resumeDomain || analysis.jobDescriptionDomain) ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            <Metric label="Resume domain" value={analysis.resumeDomain ?? "Unknown"} />
+            <Metric label="Job domain" value={analysis.jobDescriptionDomain ?? "Unknown"} />
+          </div>
+        ) : null}
+
         <KeywordList title="Matched keywords" keywords={analysis.matchedKeywords} tone="success" />
         <KeywordList title="Missing keywords" keywords={analysis.missingKeywords} tone="warning" />
+
+        {analysis.feedback ? (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+            {analysis.feedback}
+          </div>
+        ) : null}
 
         <div>
           <h3 className="text-sm font-semibold text-slate-800">Suggestions</h3>
@@ -225,6 +244,19 @@ function MatchResultCard({ analysis }: { analysis: ResumeMatchAnalysis }) {
       </CardContent>
     </Card>
   );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function formatOptionalPercent(value: number | null) {
+  return typeof value === "number" ? `${Math.round(value)}%` : "N/A";
 }
 
 function KeywordList({

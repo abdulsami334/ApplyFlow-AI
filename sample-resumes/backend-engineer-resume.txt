@@ -1,0 +1,36 @@
+Sami Khan
+Backend Engineer
+
+Summary
+Backend engineer with experience building REST APIs, authentication flows, database-backed services, and job tracking systems. Strong focus on clean architecture, maintainable services, and secure user-scoped data access.
+
+Skills
+C#
+ASP.NET Core
+Entity Framework Core
+PostgreSQL
+REST API
+JWT authentication
+SQL
+Docker
+Git
+Unit testing
+xUnit
+Repository pattern
+Service layer architecture
+
+Experience
+Backend Engineer
+Built secure ASP.NET Core APIs for user authentication, application tracking, resume uploads, and dashboard reporting.
+Implemented Entity Framework Core migrations, PostgreSQL schemas, and user-isolated queries.
+Created service-layer business logic with DTO-based API contracts.
+Added automated backend tests using xUnit and in-memory database testing.
+
+Projects
+ApplyFlow AI
+Developed job application CRUD, resume library, and deterministic resume-to-job keyword matching.
+Created protected APIs using JWT authentication.
+Designed database models for applications, resumes, job descriptions, and match analysis.
+
+Education
+Bachelor's degree in Computer Science

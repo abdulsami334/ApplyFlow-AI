@@ -22,6 +22,14 @@ export interface ResumeMatchAnalysis {
   resumeId: string;
   jobDescriptionId: string;
   matchScore: number;
+  resumeDomain: string | null;
+  jobDescriptionDomain: string | null;
+  similarityPercent: number | null;
+  skillScore: number | null;
+  domainScore: number | null;
+  feedback: string | null;
+  resumeSkills: string[];
+  jobDescriptionSkills: string[];
   matchedKeywords: string[];
   missingKeywords: string[];
   suggestions: string[];

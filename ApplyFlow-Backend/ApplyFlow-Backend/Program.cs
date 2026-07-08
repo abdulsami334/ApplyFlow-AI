@@ -51,6 +51,8 @@ builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IResumeService, ResumeService>();
 builder.Services.AddScoped<IApplicationMatchService, ApplicationMatchService>();
+builder.Services.Configure<AiServiceOptions>(builder.Configuration.GetSection("AiService"));
+builder.Services.AddHttpClient<IAiResumeAnalysisClient, AiResumeAnalysisClient>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 

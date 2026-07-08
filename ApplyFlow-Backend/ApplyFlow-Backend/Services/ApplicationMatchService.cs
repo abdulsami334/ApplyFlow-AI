@@ -1,7 +1,6 @@
-using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using ApplyFlow_Backend.Data;
+using ApplyFlow_Backend.DTOs.AiService;
 using ApplyFlow_Backend.DTOs.Applications;
 using ApplyFlow_Backend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -10,21 +9,18 @@ namespace ApplyFlow_Backend.Services;
 
 public class ApplicationMatchService : IApplicationMatchService
 {
-    private const string ExtractionWarning =
-        "Resume text extraction is not available yet. Please add extracted text support or upload a text-readable file.";
-
-    private static readonly HashSet<string> StopWords = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "is", "it",
-        "of", "on", "or", "that", "the", "this", "to", "with", "you", "your", "we", "our",
-        "will", "can", "have", "has", "job", "role", "team", "work", "experience", "years"
-    };
-
     private readonly AppDbContext _context;
+    private readonly IAiResumeAnalysisClient _aiResumeAnalysisClient;
 
     public ApplicationMatchService(AppDbContext context)
+        : this(context, new LocalResumeAnalysisClient()) { }
+
+    public ApplicationMatchService(
+        AppDbContext context,
+        IAiResumeAnalysisClient aiResumeAnalysisClient)
     {
         _context = context;
+        _aiResumeAnalysisClient = aiResumeAnalysisClient;
     }
 
     public async Task<JobDescriptionResponseDto> CreateJobDescriptionAsync(
@@ -125,21 +121,17 @@ public class ApplicationMatchService : IApplicationMatchService
             throw new ArgumentException("Resume not found.");
         }
 
-        var jobKeywords = ExtractKeywords(jobDescription.RawText);
-        var resumeText = ExtractResumeText(resume);
-        var resumeKeywords = ExtractKeywords(resumeText);
-        var matchedKeywords = jobKeywords
-            .Where(keyword => resumeKeywords.Contains(keyword))
-            .ToList();
-        var missingKeywords = jobKeywords
-            .Where(keyword => !resumeKeywords.Contains(keyword))
-            .ToList();
+        var aiAnalysis = await _aiResumeAnalysisClient.AnalyzeAsync(new AiResumeAnalysisRequest
+        {
+            JobDescription = jobDescription.RawText,
+            FileName = resume.FileName,
+            ContentType = resume.ContentType,
+            FileContentBase64 = Convert.ToBase64String(resume.FileContent)
+        });
 
-        var score = jobKeywords.Count == 0
-            ? 0
-            : (int)Math.Round((double)matchedKeywords.Count / jobKeywords.Count * 100);
-
-        var suggestions = BuildSuggestions(missingKeywords, resumeText);
+        var warnings = aiAnalysis.Warnings
+            .Where(warning => !string.IsNullOrWhiteSpace(warning))
+            .ToList();
 
         var analysis = new ResumeMatchAnalysis
         {
@@ -148,17 +140,25 @@ public class ApplicationMatchService : IApplicationMatchService
             ApplicationId = applicationId,
             ResumeId = resume.Id,
             JobDescriptionId = jobDescription.Id,
-            MatchScore = score,
-            MatchedKeywordsJson = JsonSerializer.Serialize(matchedKeywords),
-            MissingKeywordsJson = JsonSerializer.Serialize(missingKeywords),
-            SuggestionsJson = JsonSerializer.Serialize(suggestions),
+            MatchScore = aiAnalysis.AtsScore,
+            ResumeDomain = aiAnalysis.ResumeDomain,
+            JobDescriptionDomain = aiAnalysis.JobDescriptionDomain,
+            SimilarityPercent = aiAnalysis.SimilarityPercent,
+            SkillScore = aiAnalysis.SkillScore,
+            DomainScore = aiAnalysis.DomainScore,
+            Feedback = aiAnalysis.Feedback,
+            ResumeSkillsJson = JsonSerializer.Serialize(aiAnalysis.ResumeSkills),
+            JobDescriptionSkillsJson = JsonSerializer.Serialize(aiAnalysis.JobDescriptionSkills),
+            MatchedKeywordsJson = JsonSerializer.Serialize(aiAnalysis.MatchedSkills),
+            MissingKeywordsJson = JsonSerializer.Serialize(aiAnalysis.MissingSkills),
+            SuggestionsJson = JsonSerializer.Serialize(aiAnalysis.Suggestions),
             CreatedAt = DateTime.UtcNow
         };
 
         _context.ResumeMatchAnalyses.Add(analysis);
         await _context.SaveChangesAsync();
 
-        return ToMatchAnalysisResponse(analysis, string.IsNullOrWhiteSpace(resumeText) ? ExtractionWarning : null);
+        return ToMatchAnalysisResponse(analysis, warnings.Count == 0 ? null : string.Join(" ", warnings));
     }
 
     public async Task<ResumeMatchAnalysisResponseDto?> GetLatestMatchAnalysisAsync(Guid userId, Guid applicationId)
@@ -196,44 +196,6 @@ public class ApplicationMatchService : IApplicationMatchService
         return rawText.Trim();
     }
 
-    private static HashSet<string> ExtractKeywords(string text)
-    {
-        return Regex.Matches(text.ToLowerInvariant(), "[a-z][a-z0-9+#.-]{2,}")
-            .Select(match => match.Value.Trim('.', ',', ';', ':', '!', '?'))
-            .Where(keyword => keyword.Length >= 3 && !StopWords.Contains(keyword))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(40)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-    }
-
-    private static string ExtractResumeText(Resume resume)
-    {
-        if (string.Equals(resume.ContentType, "text/plain", StringComparison.OrdinalIgnoreCase))
-        {
-            return Encoding.UTF8.GetString(resume.FileContent);
-        }
-
-        return string.Empty;
-    }
-
-    private static IReadOnlyList<string> BuildSuggestions(IReadOnlyList<string> missingKeywords, string resumeText)
-    {
-        if (string.IsNullOrWhiteSpace(resumeText))
-        {
-            return [ExtractionWarning];
-        }
-
-        if (missingKeywords.Count == 0)
-        {
-            return ["Your resume already covers the main keywords detected in this job description."];
-        }
-
-        return missingKeywords
-            .Take(5)
-            .Select(keyword => $"Consider adding evidence for '{keyword}' if it matches your real experience.")
-            .ToList();
-    }
-
     private static JobDescriptionResponseDto ToJobDescriptionResponse(JobDescription jobDescription)
     {
         return new JobDescriptionResponseDto
@@ -259,6 +221,14 @@ public class ApplicationMatchService : IApplicationMatchService
             ResumeId = analysis.ResumeId,
             JobDescriptionId = analysis.JobDescriptionId,
             MatchScore = analysis.MatchScore,
+            ResumeDomain = analysis.ResumeDomain,
+            JobDescriptionDomain = analysis.JobDescriptionDomain,
+            SimilarityPercent = analysis.SimilarityPercent,
+            SkillScore = analysis.SkillScore,
+            DomainScore = analysis.DomainScore,
+            Feedback = analysis.Feedback,
+            ResumeSkills = DeserializeStringList(analysis.ResumeSkillsJson),
+            JobDescriptionSkills = DeserializeStringList(analysis.JobDescriptionSkillsJson),
             MatchedKeywords = DeserializeStringList(analysis.MatchedKeywordsJson),
             MissingKeywords = DeserializeStringList(analysis.MissingKeywordsJson),
             Suggestions = DeserializeStringList(analysis.SuggestionsJson),
@@ -269,6 +239,11 @@ public class ApplicationMatchService : IApplicationMatchService
 
     private static IReadOnlyList<string> DeserializeStringList(string json)
     {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return [];
+        }
+
         return JsonSerializer.Deserialize<IReadOnlyList<string>>(json) ?? [];
     }
 }

@@ -1,0 +1,39 @@
+Sami Khan
+Full Stack Developer
+
+Summary
+Full stack developer experienced in building responsive web applications with React and Next.js, backed by ASP.NET Core APIs and PostgreSQL databases. Comfortable working across frontend UI, API integration, authentication, and deployment workflows.
+
+Skills
+React
+Next.js
+TypeScript
+JavaScript
+HTML
+CSS
+Tailwind CSS
+ASP.NET Core
+C#
+Entity Framework Core
+PostgreSQL
+REST API
+JWT authentication
+Git
+Docker
+Playwright
+
+Experience
+Full Stack Developer
+Built protected dashboard, application tracking pages, and resume upload workflows.
+Integrated frontend services with backend REST APIs using Axios.
+Implemented loading, error, empty, and success states for user-facing workflows.
+Created Playwright tests for resume upload and application match analysis pages.
+
+Projects
+ApplyFlow AI
+Created application detail page with job description editor, resume selector, and match score UI.
+Connected Resume Library with application tracking workflow.
+Implemented deterministic keyword matching before adding full AI.
+
+Education
+Bachelor's degree in Computer Science

@@ -71,6 +71,11 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(analysis => analysis.Id);
             entity.Property(analysis => analysis.MatchScore).IsRequired();
+            entity.Property(analysis => analysis.ResumeDomain).HasMaxLength(255);
+            entity.Property(analysis => analysis.JobDescriptionDomain).HasMaxLength(255);
+            entity.Property(analysis => analysis.Feedback).HasMaxLength(4000);
+            entity.Property(analysis => analysis.ResumeSkillsJson).IsRequired().HasDefaultValue("[]");
+            entity.Property(analysis => analysis.JobDescriptionSkillsJson).IsRequired().HasDefaultValue("[]");
             entity.Property(analysis => analysis.MatchedKeywordsJson).IsRequired();
             entity.Property(analysis => analysis.MissingKeywordsJson).IsRequired();
             entity.Property(analysis => analysis.SuggestionsJson).IsRequired();

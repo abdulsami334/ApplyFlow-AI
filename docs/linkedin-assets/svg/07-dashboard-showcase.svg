@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1920" y2="1080">
+      <stop stop-color="#070b1a"/>
+      <stop offset="0.55" stop-color="#0c1230"/>
+      <stop offset="1" stop-color="#111032"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1480 180) rotate(145) scale(620 420)">
+      <stop stop-color="#a855f7" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#a855f7" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(330 900) rotate(-25) scale(620 360)">
+      <stop stop-color="#38bdf8" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#38bdf8"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#glowA)"/>
+  <rect width="1920" height="1080" fill="url(#glowB)"/>
+  <g font-family="Inter, Segoe UI, Arial, sans-serif">
+    
+    
+    <text x="110" y="92" font-size="24" font-weight="800" fill="#38bdf8" letter-spacing="4">APPLYFLOW AI CASE STUDY</text>
+    <text x="110" y="158" font-size="56" font-weight="850" fill="#f8fbff">Dashboard Showcase</text>
+    <rect x="150" y="230" width="1620" height="650" rx="32" fill="#111936" stroke="#30406f" stroke-width="2"/>
+    <text x="220" y="310" font-size="42" font-weight="850" fill="#f8fbff">Pipeline Overview</text>
+    <text x="220" y="358" font-size="26" fill="#aebce0">Application statistics, status distribution, and monthly activity</text>
+    <rect x="220" y="420" width="310" height="150" rx="28" fill="#0c1230" stroke="#30406f" stroke-width="2"/>
+      <text x="254" y="475" font-size="26" fill="#aebce0">Total</text>
+      <text x="254" y="540" font-size="58" font-weight="900" fill="#38bdf8">128</text>
+<rect x="590" y="420" width="310" height="150" rx="28" fill="#0c1230" stroke="#30406f" stroke-width="2"/>
+      <text x="624" y="475" font-size="26" fill="#aebce0">Applied</text>
+      <text x="624" y="540" font-size="58" font-weight="900" fill="#38bdf8">42</text>
+<rect x="960" y="420" width="310" height="150" rx="28" fill="#0c1230" stroke="#30406f" stroke-width="2"/>
+      <text x="994" y="475" font-size="26" fill="#aebce0">Interview</text>
+      <text x="994" y="540" font-size="58" font-weight="900" fill="#a855f7">18</text>
+<rect x="1330" y="420" width="310" height="150" rx="28" fill="#0c1230" stroke="#30406f" stroke-width="2"/>
+      <text x="1364" y="475" font-size="26" fill="#aebce0">Offers</text>
+      <text x="1364" y="540" font-size="58" font-weight="900" fill="#38bdf8">4</text>
+    <rect x="220" y="640" width="670" height="160" rx="28" fill="#0c1230" stroke="#30406f" stroke-width="2"/>
+    <rect x="270" y="690" width="44" height="90" rx="12" fill="#38bdf8"/>
+<rect x="360" y="650" width="44" height="130" rx="12" fill="#6366f1"/>
+<rect x="450" y="715" width="44" height="65" rx="12" fill="#a855f7"/>
+<rect x="540" y="630" width="44" height="150" rx="12" fill="#38bdf8"/>
+<rect x="630" y="675" width="44" height="105" rx="12" fill="#6366f1"/>
+<rect x="720" y="605" width="44" height="175" rx="12" fill="#a855f7"/>
+    <rect x="960" y="640" width="690" height="160" rx="28" fill="#0c1230" stroke="#30406f" stroke-width="2"/>
+    <text x="1018" y="700" font-size="24" fill="#aebce0">Applied</text><rect x="1190" y="682" width="260" height="18" rx="9" fill="#38bdf8"/>
+<text x="1018" y="734" font-size="24" fill="#aebce0">Screening</text><rect x="1190" y="716" width="222" height="18" rx="9" fill="#6366f1"/>
+<text x="1018" y="768" font-size="24" fill="#aebce0">Interview</text><rect x="1190" y="750" width="184" height="18" rx="9" fill="#a855f7"/>
+<text x="1018" y="802" font-size="24" fill="#aebce0">Offer</text><rect x="1190" y="784" width="146" height="18" rx="9" fill="#34d399"/>
+  
+    
+    <text x="110" y="1010" font-size="22" fill="#aebce0">ASP.NET Core | Next.js | PostgreSQL | Playwright | Jira</text>
+    <text x="1810" y="1010" text-anchor="end" font-size="24" font-weight="800" fill="#aebce0">07/14</text>
+  </g>
+  <title>Dashboard Showcase</title>
+</svg>
